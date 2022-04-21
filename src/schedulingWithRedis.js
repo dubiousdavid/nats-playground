@@ -12,14 +12,9 @@ let counter = 1
 schedule.scheduleJob('*/5 * * * * *', async (date) => {
   console.log(`(${counter++}) Scheduling ${date}`)
   const keyPrefix = 'schedulingLock:'
-  const key = date.getTime().toString()
-  const lockObtained = await redis.set(
-    `${keyPrefix}${key}`,
-    process.pid,
-    'PX',
-    ms('1m'),
-    'NX'
-  )
+  const scheduledTime = date.getTime().toString()
+  const key = `${keyPrefix}${scheduledTime}`
+  const lockObtained = await redis.set(key, process.pid, 'PX', ms('1m'), 'NX')
   if (lockObtained) {
     console.log(`Published ${date}`)
     js.publish('ORDERS.job', sc.encode(`${date} ${process.pid}`))
