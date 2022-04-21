@@ -49,7 +49,7 @@ const processFromDef = async (def) => {
       await def.perform(msg, def)
       debug('COMPLETED', msg)
       // Ack message
-      msg.ack()
+      await msg.ackAck()
     } catch (e) {
       debug('FAILED', e)
       let backoffMs = getNextBackoff(backoff, msg)
