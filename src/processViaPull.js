@@ -10,7 +10,7 @@ import { setTimeout } from 'node:timers/promises'
 
 const connection = await connect()
 
-const nanos = (x) => ms(x) * 1000
+const nanos = (x) => ms(x) * 1e6
 
 const js = connection.jetstream()
 const jsm = await connection.jetstreamManager()
