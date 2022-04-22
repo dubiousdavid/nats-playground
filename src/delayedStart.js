@@ -1,7 +1,6 @@
 import ms from 'ms'
 import processFromDef from './jobProcessor.js'
-import { delayInitialProcessing } from './util.js'
-import { expBackoff } from './util.js'
+import { expBackoff, delayInitialProcessing } from './util.js'
 
 const def = {
   stream: 'ORDERS',
