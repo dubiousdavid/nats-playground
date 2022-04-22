@@ -26,7 +26,7 @@ const def = {
           throw signal.error
         }
       }
-    }).catch(e => console.log(e))
+    })
   },
 }
 await processFromDef(def)
