@@ -1,11 +1,13 @@
+import ms from 'ms'
 import processFromDef from './jobProcessor.js'
+import { expBackoff } from './util.js'
 
 const def = {
   stream: 'ORDERS',
-  backoff: [1000, 2000, 4000, 8000],
+  backoff: expBackoff(ms('1s')),
   perform(msg) {
     console.log(msg.info)
     throw 'fail'
-  }
+  },
 }
 await processFromDef(def)

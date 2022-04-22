@@ -21,7 +21,7 @@ const def = {
         // Simulate some work
         await setTimeout(ms('5s'))
         console.log(i, data)
-        // Make sure any attempted lock extension has not failed.
+        // Make sure any attempted lock extension has not failed
         if (signal.aborted) {
           throw signal.error
         }

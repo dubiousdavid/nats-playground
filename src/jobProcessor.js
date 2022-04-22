@@ -1,10 +1,18 @@
 import _ from 'lodash/fp.js'
-import { AckPolicy, connect, DeliverPolicy, DiscardPolicy, ReplayPolicy, RetentionPolicy, StorageType } from 'nats'
+import {
+  AckPolicy,
+  connect,
+  DeliverPolicy,
+  DiscardPolicy,
+  ReplayPolicy,
+  RetentionPolicy,
+  StorageType,
+} from 'nats'
 import ms from 'ms'
 import _debug from 'debug'
 
 const debug = _debug('nats')
-const nanos = (x) => ms(x) * 1000
+const nanos = (x) => ms(x) * 1e6
 
 const defaultBackoff = 1000
 
@@ -21,8 +29,9 @@ const createStream = async (conn, def) => {
     name: def.stream,
     retention: RetentionPolicy.Workqueue,
     storage: StorageType.File,
+    // TODO: This should come from the def
     num_replicas: 1,
-    subjects: def.stream,
+    subjects: [def.stream],
     discard: DiscardPolicy.Old,
     deny_delete: false,
     deny_purge: false,
@@ -41,7 +50,8 @@ const processFromDef = async (def) => {
 
   const conn = await connect()
   // Create stream
-  await createStream(conn, def)
+  // TODO: Maybe handle errors better
+  await createStream(conn, def).catch(() => {})
   // Create consumer
   const js = conn.jetstream()
   const config = _.defaults(def.consumer, defaultConsumerConfig)
@@ -56,6 +66,7 @@ const processFromDef = async (def) => {
     ps.pull({ batch: def.batch ?? 10, expires: pullInterval })
   }
   const backoff = def.backoff ?? defaultBackoff
+  debug('BACKOFF', backoff)
   // Do the initial pull
   run()
   // Pull regularly
@@ -71,7 +82,7 @@ const processFromDef = async (def) => {
     } catch (e) {
       debug('FAILED', e)
       let backoffMs = getNextBackoff(backoff, msg)
-      debug('BACKOFF MS', backoffMs)
+      debug('NEXT BACKOFF MS', backoffMs)
       // Negative ack message with backoff
       msg.nak(backoffMs)
     }
