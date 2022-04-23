@@ -4,6 +4,8 @@ import _debug from 'debug'
 
 const debug = _debug('nats')
 
+export let nanos = (x) => ms(x) * 1e6
+
 export let delayInitialProcessing = async (delayMs, msg) => {
   if (msg.info.redeliveryCount === 1) {
     debug('DELAYING', delayMs)

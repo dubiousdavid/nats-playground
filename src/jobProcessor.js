@@ -8,11 +8,10 @@ import {
   RetentionPolicy,
   StorageType,
 } from 'nats'
-import ms from 'ms'
+import { nanos } from './util.js'
 import _debug from 'debug'
 
 const debug = _debug('nats')
-const nanos = (x) => ms(x) * 1e6
 
 const defaultBackoff = 1000
 
@@ -25,17 +24,20 @@ const getNextBackoff = (backoff, msg) => {
 
 const createStream = async (conn, def) => {
   const jsm = await conn.jetstreamManager()
-  return jsm.streams.add({
+  const defaultStreamConfig = {
     name: def.stream,
     retention: RetentionPolicy.Workqueue,
     storage: StorageType.File,
+    max_age: nanos('1w'),
     // TODO: This should come from the def
     num_replicas: 1,
     subjects: [def.stream],
     discard: DiscardPolicy.Old,
     deny_delete: false,
     deny_purge: false,
-  })
+  }
+  const config = _.defaults(def.streamConfig, defaultStreamConfig)
+  return jsm.streams.add(config)
 }
 
 const processFromDef = async (def) => {
@@ -52,9 +54,9 @@ const processFromDef = async (def) => {
   // Create stream
   // TODO: Maybe handle errors better
   await createStream(conn, def).catch(() => {})
-  // Create consumer
+  // Create pull consumer
   const js = conn.jetstream()
-  const config = _.defaults(def.consumer, defaultConsumerConfig)
+  const config = _.defaults(def.consumerConfig, defaultConsumerConfig)
   const ps = await js.pullSubscribe('', {
     stream: def.stream,
     mack: true,
