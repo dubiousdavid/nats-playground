@@ -40,7 +40,7 @@ const createStream = async (conn, def) => {
   return jsm.streams.add(config)
 }
 
-const processFromDef = async (def) => {
+const createConsumer = (conn, def) => {
   const defaultConsumerConfig = {
     durable_name: 'process',
     max_deliver: def.numAttempts ?? 5,
@@ -49,19 +49,23 @@ const processFromDef = async (def) => {
     deliver_policy: DeliverPolicy.All,
     replay_policy: ReplayPolicy.Instant,
   }
+  const js = conn.jetstream()
+  const config = _.defaults(def.consumerConfig, defaultConsumerConfig)
 
+  return js.pullSubscribe('', {
+    stream: def.stream,
+    mack: true,
+    config,
+  })
+}
+
+const processFromDef = async (def) => {
   const conn = await connect()
   // Create stream
   // TODO: Maybe handle errors better
   await createStream(conn, def).catch(() => {})
   // Create pull consumer
-  const js = conn.jetstream()
-  const config = _.defaults(def.consumerConfig, defaultConsumerConfig)
-  const ps = await js.pullSubscribe('', {
-    stream: def.stream,
-    mack: true,
-    config,
-  })
+  const ps = await createConsumer(conn, def)
   const pullInterval = def.pullInterval ?? 1000
   // Pull messages from the consumer
   const run = () => {
