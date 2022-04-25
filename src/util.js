@@ -31,16 +31,12 @@ export let delayProcessingUntil = async msg => {
       debug('DELAYING UNTIL', startTime)
 
       // Indicate we are working every second to prevent an ack wait timeout
-      let elapsed = false
-      while (!elapsed) {
-        console.log('now', Date.now())
-        console.log('startTime', startTime)
+      while (true) {
         if (Date.now() > startTime) {
-          elapsed = true
-        } else {
-          await setTimeout(ms('1s'))
-          msg.working()
+          break
         }
+        await setTimeout(ms('1s'))
+        msg.working()
       }
       debug('DELAY UNTIL COMPLETE')
     }
