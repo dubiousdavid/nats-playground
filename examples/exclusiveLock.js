@@ -3,7 +3,7 @@ import Redis from 'ioredis'
 import Redlock from 'redlock'
 import { setTimeout } from 'node:timers/promises'
 import ms from 'ms'
-import processFromDef from './jobProcessor.js'
+import processFromDef from '../jobProcessor.js'
 
 const sc = StringCodec()
 const redis = new Redis()

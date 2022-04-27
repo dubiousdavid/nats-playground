@@ -1,5 +1,5 @@
 import { StringCodec } from 'nats'
-import scheduleJob from './jobScheduler.js'
+import scheduleJob from '../jobScheduler.js'
 const sc = StringCodec()
 
 scheduleJob({

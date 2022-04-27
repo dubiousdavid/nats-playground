@@ -1,4 +1,4 @@
-import processFromDef from './jobProcessor.js'
+import processFromDef from '../jobProcessor.js'
 
 const def = {
   stream: 'ORDERS',
