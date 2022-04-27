@@ -36,13 +36,14 @@ const createStream = async (conn, def) => {
     deny_delete: false,
     deny_purge: false,
   }
-  const config = _.defaults(def.streamConfig, defaultStreamConfig)
+  const config = _.merge(defaultStreamConfig, def.streamConfig)
+  debug('STREAM CONFIG %O', config)
   return jsm.streams.add(config)
 }
 
 const createConsumer = (conn, def) => {
   const defaultConsumerConfig = {
-    durable_name: 'process',
+    durable_name: `${def.stream}Consumer`,
     max_deliver: def.numAttempts ?? 5,
     ack_policy: AckPolicy.Explicit,
     ack_wait: nanos('10s'),
@@ -50,9 +51,10 @@ const createConsumer = (conn, def) => {
     replay_policy: ReplayPolicy.Instant,
   }
   const js = conn.jetstream()
-  const config = _.defaults(def.consumerConfig, defaultConsumerConfig)
+  const config = _.merge(defaultConsumerConfig, def.consumerConfig)
+  debug('CONSUMER CONFIG %O', config)
 
-  return js.pullSubscribe('', {
+  return js.pullSubscribe(def.filterSubject || '', {
     stream: def.stream,
     mack: true,
     config,
