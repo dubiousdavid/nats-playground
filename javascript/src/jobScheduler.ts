@@ -3,15 +3,15 @@ import schedule from 'node-schedule'
 import Redis from 'ioredis'
 import ms from 'ms'
 import _debug from 'debug'
+import { JobSchedule } from './types'
 
 const debug = _debug('nats')
 
-const connection = await connect()
-const js = connection.jetstream()
-// TODO: Set key prefix per environment
-const redis = new Redis()
-
-const scheduleJob = ({ id, rule, subject, data }) => {
+const scheduleJob = async ({ id, rule, subject, data }: JobSchedule) => {
+  const connection = await connect()
+  const js = connection.jetstream()
+  // TODO: Set key prefix per environment
+  const redis = new Redis()
   schedule.scheduleJob(rule, async (date) => {
     debug('SCHEDULING', date)
     const keyPrefix = 'schedulingLock'

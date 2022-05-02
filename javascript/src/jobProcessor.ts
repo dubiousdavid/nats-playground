@@ -1,28 +1,32 @@
-import _ from 'lodash/fp.js'
+import _ from 'lodash/fp'
 import {
   AckPolicy,
   connect,
   DeliverPolicy,
   DiscardPolicy,
+  JsMsg,
+  NatsConnection,
   ReplayPolicy,
   RetentionPolicy,
   StorageType,
+  StreamInfo,
 } from 'nats'
 import { nanos } from './util.js'
 import _debug from 'debug'
+import { JobDef } from './types.js'
 
 const debug = _debug('nats')
 
 const defaultBackoff = 1000
 
-const getNextBackoff = (backoff, msg) => {
+const getNextBackoff = (backoff: number | number[], msg: JsMsg) => {
   if (Array.isArray(backoff)) {
     return backoff[msg.info.redeliveryCount - 1] || backoff.at(-1)
   }
   return backoff
 }
 
-const createStream = async (conn, def) => {
+const createStream = async (conn: NatsConnection, def: JobDef) => {
   const jsm = await conn.jetstreamManager()
   const defaultStreamConfig = {
     name: def.stream,
@@ -41,7 +45,7 @@ const createStream = async (conn, def) => {
   return jsm.streams.add(config)
 }
 
-const createConsumer = (conn, def) => {
+const createConsumer = (conn: NatsConnection, def: JobDef) => {
   const defaultConsumerConfig = {
     durable_name: `${def.stream}Consumer`,
     max_deliver: def.numAttempts ?? 5,
@@ -61,7 +65,7 @@ const createConsumer = (conn, def) => {
   })
 }
 
-const processFromDef = async (def) => {
+const processFromDef = async (def: JobDef) => {
   const conn = await connect()
   // Create stream
   // TODO: Maybe handle errors better
