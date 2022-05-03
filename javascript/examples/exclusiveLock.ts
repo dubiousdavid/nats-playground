@@ -1,19 +1,20 @@
-import { StringCodec } from 'nats'
+import { JsMsg, StringCodec } from 'nats'
 import Redis from 'ioredis'
 import Redlock from 'redlock'
 import { setTimeout } from 'node:timers/promises'
 import ms from 'ms'
-import processFromDef from '../jobProcessor.js'
+import jobProcessor from '../src/jobProcessor'
 
 const sc = StringCodec()
 const redis = new Redis()
 const redlock = new Redlock([redis])
 
+// TODO: This code needs rethinking
 const def = {
-  stream: 'syncWithDataSource',
+  stream: 'ORDERS',
   numAttempts: 1,
-  async perform(msg) {
-    let resources = ['govSpend:myJobLock']
+  async perform(msg: JsMsg) {
+    let resources = ['mySite:myJobLock']
     // Attempt to run some code
     await redlock.using(resources, ms('10s'), async (signal) => {
       const data = sc.decode(msg.data)
@@ -29,4 +30,9 @@ const def = {
     })
   },
 }
-await processFromDef(def)
+const run = async () => {
+  const processor = await jobProcessor()
+  processor.start(def)
+}
+
+run()

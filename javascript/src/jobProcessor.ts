@@ -117,7 +117,7 @@ const jobProcessor = async (opts?: NatsOpts) => {
   const stop = () => {
     abortController.abort()
     clearInterval(timer)
-    return deferred.promise
+    return deferred?.promise
   }
   return { start, stop }
 }
