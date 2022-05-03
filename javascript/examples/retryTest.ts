@@ -1,12 +1,13 @@
 import ms from 'ms'
-import processFromDef from '../jobProcessor.js'
-import { expBackoff } from '../util.js'
+import { JsMsg } from 'nats'
+import jobProcessor from '../src/jobProcessor'
+import { expBackoff } from '../src/util'
 
 const def = {
   // Stream
   stream: 'ORDERS',
   streamConfig: {
-    subjects: ['ORDERS.*']
+    subjects: ['ORDERS.*'],
   },
   // Consumer
   filterSubject: 'ORDERS.US',
@@ -16,9 +17,15 @@ const def = {
   // Retry delays
   backoff: expBackoff(ms('1s')),
   // Process message
-  async perform(msg) {
+  async perform(msg: JsMsg) {
     console.log(msg.info)
     throw 'fail'
   },
 }
-await processFromDef(def)
+
+const run = async () => {
+  const processor = await jobProcessor()
+  processor.start(def)
+}
+
+run()

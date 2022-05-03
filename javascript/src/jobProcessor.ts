@@ -11,9 +11,10 @@ import {
   StorageType,
   StreamInfo,
 } from 'nats'
-import { nanos } from './util.js'
+import { nanos, defer } from './util'
 import _debug from 'debug'
-import { JobDef } from './types.js'
+import { Deferred, NatsOpts, JobDef } from './types'
+import { clearInterval } from 'timers'
 
 const debug = _debug('nats')
 
@@ -65,40 +66,60 @@ const createConsumer = (conn: NatsConnection, def: JobDef) => {
   })
 }
 
-const processFromDef = async (def: JobDef) => {
-  const conn = await connect()
-  // Create stream
-  // TODO: Maybe handle errors better
-  await createStream(conn, def).catch(() => {})
-  // Create pull consumer
-  const ps = await createConsumer(conn, def)
-  const pullInterval = def.pullInterval ?? 1000
-  // Pull messages from the consumer
-  const run = () => {
-    ps.pull({ batch: def.batch ?? 10, expires: pullInterval })
-  }
-  const backoff = def.backoff ?? defaultBackoff
-  debug('BACKOFF', backoff)
-  // Do the initial pull
-  run()
-  // Pull regularly
-  setInterval(run, pullInterval)
-  // Consume messages
-  for await (let msg of ps) {
-    debug('RECEIVED', new Date())
-    try {
-      await def.perform(msg, def)
-      debug('COMPLETED', msg.info)
-      // Ack message
-      await msg.ackAck()
-    } catch (e) {
-      debug('FAILED', e)
-      let backoffMs = getNextBackoff(backoff, msg)
-      debug('NEXT BACKOFF MS', backoffMs)
-      // Negative ack message with backoff
-      msg.nak(backoffMs)
+const jobProcessor = async (opts?: NatsOpts) => {
+  const { natsOpts } = opts || {}
+  const conn = await connect(natsOpts)
+  let timer: NodeJS.Timer
+  let deferred: Deferred<void>
+  let abortController = new AbortController()
+
+  const start = async (def: JobDef) => {
+    // Create stream
+    // TODO: Maybe handle errors better
+    await createStream(conn, def).catch(() => {})
+    // Create pull consumer
+    const ps = await createConsumer(conn, def)
+    const pullInterval = def.pullInterval ?? 1000
+    // Pull messages from the consumer
+    const run = () => {
+      ps.pull({ batch: def.batch ?? 10, expires: pullInterval })
+    }
+    const backoff = def.backoff ?? defaultBackoff
+    debug('BACKOFF', backoff)
+    // Do the initial pull
+    run()
+    // Pull regularly
+    timer = setInterval(run, pullInterval)
+    // Consume messages
+    for await (let msg of ps) {
+      debug('RECEIVED', new Date())
+      deferred = defer()
+      try {
+        await def.perform(msg, abortController.signal, def)
+        debug('COMPLETED', msg.info)
+        // Ack message
+        await msg.ackAck()
+      } catch (e) {
+        debug('FAILED', e)
+        let backoffMs = getNextBackoff(backoff, msg)
+        debug('NEXT BACKOFF MS', backoffMs)
+        // Negative ack message with backoff
+        msg.nak(backoffMs)
+      } finally {
+        deferred.done()
+      }
+      // Don't process any more messages if stopping
+      if (abortController.signal.aborted) {
+        return
+      }
     }
   }
+  const stop = () => {
+    abortController.abort()
+    clearInterval(timer)
+    return deferred.promise
+  }
+  return { start, stop }
 }
 
-export default processFromDef
+export default jobProcessor

@@ -1,4 +1,5 @@
-import { ConsumerOpts, JsMsg, StreamConfig } from 'nats'
+import { ConnectionOptions, ConsumerConfig, JsMsg, StreamConfig } from 'nats'
+import { RedisOptions } from 'ioredis'
 import {
   RecurrenceRule,
   RecurrenceSpecDateRange,
@@ -7,14 +8,14 @@ import {
 
 export interface JobDef {
   stream: string
-  streamConfig: StreamConfig
-  consumerConfig: ConsumerOpts
-  filterSubject: string
+  streamConfig?: Partial<StreamConfig>
+  consumerConfig?: Partial<ConsumerConfig>
+  filterSubject?: string
   pullInterval?: number
   batch?: number
   backoff?: number | number[]
   numAttempts?: number
-  perform(msg: JsMsg, def: JobDef): Promise<void>
+  perform(msg: JsMsg, signal: AbortSignal, def: JobDef): Promise<void>
 }
 
 export interface JobSchedule {
@@ -28,4 +29,17 @@ export interface JobSchedule {
     | number
   subject: string
   data: Uint8Array
+}
+
+export interface RedisOpts {
+  redisOpts: RedisOptions
+}
+
+export interface NatsOpts {
+  natsOpts: ConnectionOptions
+}
+
+export interface Deferred<A> {
+  done: (value: A) => void
+  promise: Promise<A>
 }
