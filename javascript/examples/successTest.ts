@@ -1,3 +1,7 @@
+/*
+ * Demonstrates a successful job and how to gracefully shut down
+ * without interrupting a short-lived job.
+ */
 import { JsMsg } from 'nats'
 import { setTimeout } from 'node:timers/promises'
 import jobProcessor from '../src/jobProcessor'
@@ -7,6 +11,7 @@ const def = {
   backoff: [1000, 2000, 4000, 8000],
   async perform(msg: JsMsg, signal: AbortSignal) {
     console.log(`Started ${msg.info.streamSequence}`)
+    console.log(msg.data.toString())
     await setTimeout(5000)
     console.log(`Completed ${msg.info.streamSequence}`)
   },

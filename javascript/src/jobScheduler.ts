@@ -1,5 +1,5 @@
 import { connect } from 'nats'
-import schedule from 'node-schedule'
+import nodeSchedule from 'node-schedule'
 import Redis from 'ioredis'
 import ms from 'ms'
 import _debug from 'debug'
@@ -7,16 +7,18 @@ import { JobSchedule, RedisOpts, NatsOpts } from './types'
 
 const debug = _debug('nats')
 
-const scheduleJob = async ({ natsOpts, redisOpts }: RedisOpts & NatsOpts) => {
+const jobScheduler = async (opts?: RedisOpts & NatsOpts) => {
+  const { natsOpts, redisOpts } = opts || {}
   const connection = await connect(natsOpts)
   const js = connection.jetstream()
-  const redis = new Redis(redisOpts)
-  return ({ id, rule, subject, data }: JobSchedule) => {
-    schedule.scheduleJob(rule, async (date) => {
-      debug('SCHEDULING', date)
+  const redis = redisOpts ? new Redis(redisOpts) : new Redis()
+  const schedule = ({ id, rule, subject, data }: JobSchedule) => {
+    const isFunction = typeof data === 'function'
+    return nodeSchedule.scheduleJob(rule, async (date) => {
       const keyPrefix = 'schedulingLock'
-      const scheduledTime = date.getTime().toString()
+      const scheduledTime = date.getTime()
       const key = `${keyPrefix}:${id}:${scheduledTime}`
+      // Attempt to get an exclusive lock
       const lockObtained = await redis.set(
         key,
         process.pid,
@@ -25,10 +27,13 @@ const scheduleJob = async ({ natsOpts, redisOpts }: RedisOpts & NatsOpts) => {
         'NX'
       )
       if (lockObtained) {
-        js.publish(subject, data)
+        debug('SCHEDULED', date)
+        js.publish(subject, isFunction ? data(date) : data)
       }
     })
   }
+
+  return { schedule }
 }
 
-export default scheduleJob
+export default jobScheduler

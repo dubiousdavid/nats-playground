@@ -28,7 +28,7 @@ export interface JobSchedule {
     | string
     | number
   subject: string
-  data: Uint8Array
+  data: Uint8Array | ((date: Date) => Uint8Array)
 }
 
 export interface RedisOpts {

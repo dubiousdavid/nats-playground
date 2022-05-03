@@ -1,3 +1,6 @@
+/*
+ * Demonstrates how to stop an iterative job using the abort signal
+ */
 import { JsMsg } from 'nats'
 import { setTimeout } from 'node:timers/promises'
 import jobProcessor from '../src/jobProcessor'
@@ -9,6 +12,7 @@ const def = {
     console.log(`Started ${msg.info.streamSequence}`)
     for (let i = 0; i < 5; i++) {
       await setTimeout(1000)
+      console.log(`Iteration ${i + 1} of 5`)
       if (signal.aborted) {
         return
       }
