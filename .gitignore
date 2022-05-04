@@ -60,3 +60,5 @@ typings/
 danger_log
 .DS_Store
 test-results.json
+
+dist/

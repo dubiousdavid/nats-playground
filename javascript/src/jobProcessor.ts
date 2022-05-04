@@ -92,11 +92,11 @@ const jobProcessor = async (opts?: NatsOpts) => {
     timer = setInterval(run, pullInterval)
     // Consume messages
     for await (let msg of ps) {
-      debug('RECEIVED', new Date())
+      debug('RECEIVED', msg.info)
       deferred = defer()
       try {
         await def.perform(msg, abortController.signal, def)
-        debug('COMPLETED', msg.info)
+        debug('COMPLETED')
         // Ack message
         await msg.ackAck()
       } catch (e) {

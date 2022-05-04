@@ -1,17 +1,12 @@
 {
-  "include": [
-    "./src/**/*"
-  ],
+  "include": ["src/**/*"],
   "compilerOptions": {
-    "allowSyntheticDefaultImports": true,
+    "module": "commonjs",
+    "target": "es2022",
+    "outDir": "./dist",
+    "strict": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "module": "commonjs",
-    "outDir": "./dist",
-    "resolveJsonModule": true,
-    "rootDir": "./src",
-    "strict": true,
-    "target": "es2022"
+    "resolveJsonModule": true
   }
 }
-

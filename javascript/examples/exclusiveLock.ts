@@ -1,3 +1,7 @@
+/*
+ * Demonstrates how to process only one resource at a time
+ * when multiple clients are pulling from the same consumer.
+ */
 import { JsMsg, StringCodec } from 'nats'
 import Redis from 'ioredis'
 import Redlock from 'redlock'
@@ -9,18 +13,24 @@ const sc = StringCodec()
 const redis = new Redis()
 const redlock = new Redlock([redis])
 
-// TODO: This code needs rethinking
 const def = {
   stream: 'ORDERS',
-  numAttempts: 1,
+  numAttempts: 3,
   async perform(msg: JsMsg) {
-    let resources = ['mySite:myJobLock']
+    const id = msg.data.toString()
+    // Lock resource where a stream that could contain duplicates that
+    // need to be processed in a serialized manner.
+    const resources = [`mySite:${id}`]
+    const lockDuration = ms('10s')
     // Attempt to run some code
-    await redlock.using(resources, ms('10s'), async (signal) => {
+    await redlock.using(resources, lockDuration, async (signal) => {
+      console.log('LOCK OBTAINED')
       const data = sc.decode(msg.data)
-      for (let i = 0; i < 10; i++) {
+      for (let i = 0; i < 5; i++) {
+        // Indicate we're still working
+        msg.working()
         // Simulate some work
-        await setTimeout(ms('5s'))
+        await setTimeout(ms('1s'))
         console.log(i, data)
         // Make sure any attempted lock extension has not failed
         if (signal.aborted) {
