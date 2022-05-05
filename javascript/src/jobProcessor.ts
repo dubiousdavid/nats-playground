@@ -18,8 +18,6 @@ import { clearInterval } from 'timers'
 
 const debug = _debug('nats')
 
-const defaultBackoff = 1000
-
 const getNextBackoff = (backoff: number | number[], msg: JsMsg) => {
   if (Array.isArray(backoff)) {
     return backoff[msg.info.redeliveryCount - 1] || backoff.at(-1)
@@ -66,6 +64,8 @@ const createConsumer = (conn: NatsConnection, def: JobDef) => {
   })
 }
 
+const defaults = { backoff: 1000, pullInterval: 1000, batch: 10 }
+
 const jobProcessor = async (opts?: NatsOpts) => {
   const { natsOpts } = opts || {}
   const conn = await connect(natsOpts)
@@ -74,18 +74,19 @@ const jobProcessor = async (opts?: NatsOpts) => {
   let abortController = new AbortController()
 
   const start = async (def: JobDef) => {
+    debug('JOB DEF', def)
+    const pullInterval = def.pullInterval ?? defaults.pullInterval
+    const backoff = def.backoff ?? defaults.backoff
+    const batch = def.batch ?? defaults.batch
     // Create stream
     // TODO: Maybe handle errors better
     await createStream(conn, def).catch(() => {})
     // Create pull consumer
     const ps = await createConsumer(conn, def)
-    const pullInterval = def.pullInterval ?? 1000
     // Pull messages from the consumer
     const run = () => {
-      ps.pull({ batch: def.batch ?? 10, expires: pullInterval })
+      ps.pull({ batch, expires: pullInterval })
     }
-    const backoff = def.backoff ?? defaultBackoff
-    debug('BACKOFF', backoff)
     // Do the initial pull
     run()
     // Pull regularly
