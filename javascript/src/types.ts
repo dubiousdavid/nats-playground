@@ -31,6 +31,12 @@ export interface JobSchedule {
   data: Uint8Array | ((date: Date) => Uint8Array)
 }
 
+export interface OneTimeSchedule {
+  scheduleFor: number | Date
+  subject: string
+  data: Uint8Array
+}
+
 export interface RedisOpts {
   redisOpts: RedisOptions
 }

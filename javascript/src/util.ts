@@ -8,20 +8,6 @@ const debug = _debug('nats')
 
 export const nanos = (x: string) => ms(x) * 1e6
 
-export const delayInitialProcessing = async (delayMs: number, msg: JsMsg) => {
-  if (msg.info.redeliveryCount === 1) {
-    debug('DELAYING', delayMs)
-    // Indicate we are working every second to prevent an ack wait timeout
-    for await (const startTime of setInterval(ms('1s'), Date.now())) {
-      if (Date.now() - startTime >= delayMs) {
-        break
-      }
-      msg.working()
-    }
-    debug('DELAY COMPLETE')
-  }
-}
-
 export const expBackoff = (
   startMs: number,
   { repeatAfter = 5, numEntries = 5 } = {}
