@@ -3,7 +3,7 @@ import nodeSchedule from 'node-schedule'
 import Redis from 'ioredis'
 import ms from 'ms'
 import _debug from 'debug'
-import { JobSchedule, RedisOpts, NatsOpts, OneTimeSchedule } from './types'
+import { Recurring, RedisOpts, NatsOpts, Delayed } from './types'
 
 const debug = _debug('nats')
 
@@ -23,7 +23,7 @@ const jobScheduler = async (opts?: RedisOpts & NatsOpts) => {
    *
    * Guarantees at most one delivery.
    */
-  const schedule = ({ id, rule, subject, data }: JobSchedule) => {
+  const scheduleRecurring = ({ id, rule, subject, data }: Recurring) => {
     const isFunction = typeof data === 'function'
     // Schedule job
     return nodeSchedule.scheduleJob(rule, async (date) => {
@@ -48,8 +48,7 @@ const jobScheduler = async (opts?: RedisOpts & NatsOpts) => {
    *
    * Returns a boolean indicating if the job was successfully scheduled.
    */
-  const scheduleOneTime = async (oneTimeSchedule: OneTimeSchedule) => {
-    const { scheduleFor, subject, data } = oneTimeSchedule
+  const scheduleDelayed = async ({ scheduleFor, subject, data }: Delayed) => {
     const key = `${subject}:delayed`
     const score =
       typeof scheduleFor === 'number'
@@ -60,12 +59,12 @@ const jobScheduler = async (opts?: RedisOpts & NatsOpts) => {
   }
 
   /**
-   * Process one-time jobs with interval frequency that were
-   * scheduled for subject.
+   * Publish delayed one-time jobs for subject. Check for jobs every
+   * interval milliseconds. Default interval is every 5 seconds.
    *
    * Guarantees at least one delivery.
    */
-  const processOneTime = (subject: string, interval: number) => {
+  const publishDelayed = (subject: string, interval: number = ms('5s')) => {
     const key = `${subject}:delayed`
     setInterval(async () => {
       const upper = new Date().getTime()
@@ -80,7 +79,7 @@ const jobScheduler = async (opts?: RedisOpts & NatsOpts) => {
     }, interval)
   }
 
-  return { schedule, scheduleOneTime, processOneTime }
+  return { scheduleRecurring, scheduleDelayed, publishDelayed }
 }
 
 export default jobScheduler

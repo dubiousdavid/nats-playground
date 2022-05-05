@@ -18,7 +18,7 @@ export interface JobDef {
   perform(msg: JsMsg, signal: AbortSignal, def: JobDef): Promise<void>
 }
 
-export interface JobSchedule {
+export interface Recurring {
   id: string
   rule:
     | RecurrenceRule
@@ -31,7 +31,7 @@ export interface JobSchedule {
   data: Uint8Array | ((date: Date) => Uint8Array)
 }
 
-export interface OneTimeSchedule {
+export interface Delayed {
   scheduleFor: number | Date
   subject: string
   data: Uint8Array

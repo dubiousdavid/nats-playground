@@ -1,6 +1,8 @@
 /*
  * Demonstrates a job that continually fails, retries, and eventually
  * reaches the max_deliver count (5 by default).
+ *
+ * Requires NATS to be running.
  */
 import ms from 'ms'
 import { JsMsg } from 'nats'

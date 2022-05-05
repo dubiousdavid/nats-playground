@@ -6,6 +6,8 @@
  * (1) Run script: npx ts-node examples/abortSignal.ts
  * (2) Publish a message: nats pub ORDERS someText
  * (3) Crl-C the script in the middle of the 1-5 log messages.
+ *
+ * Requires NATS to be running.
  */
 import { JsMsg } from 'nats'
 import { setTimeout } from 'node:timers/promises'
@@ -13,7 +15,6 @@ import jobProcessor from '../src/jobProcessor'
 
 const def = {
   stream: 'ORDERS',
-  backoff: [1000, 2000, 4000, 8000],
   async perform(msg: JsMsg, signal: AbortSignal) {
     console.log(`Started ${msg.info.streamSequence}`)
     for (let i = 0; i < 5; i++) {

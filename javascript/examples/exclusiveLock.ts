@@ -11,6 +11,8 @@
  * nats pub ORDERS 11
  * nats pub ORDERS 11
  * nats pub ORDERS 10
+ *
+ * Requires NATS and Redis to be running.
  */
 import { JsMsg, StringCodec } from 'nats'
 import Redis from 'ioredis'

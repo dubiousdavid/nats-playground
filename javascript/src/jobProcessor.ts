@@ -73,6 +73,10 @@ const jobProcessor = async (opts?: NatsOpts) => {
   let deferred: Deferred<void>
   let abortController = new AbortController()
 
+  /**
+   * Start processing jobs based on def.
+   * To gracefully shutdown see stop method.
+   */
   const start = async (def: JobDef) => {
     debug('JOB DEF %O', def)
     const pullInterval = def.pullInterval ?? defaults.pullInterval
@@ -115,6 +119,19 @@ const jobProcessor = async (opts?: NatsOpts) => {
       }
     }
   }
+  /**
+   * To be used in conjunction with SIGTERM and SIGINT.
+   *
+   * ```ts
+   * const processor = await jobProcessor()
+   * const shutDown = async () => {
+   *   await processor.stop()
+   *   process.exit(0)
+   * }
+   * process.on('SIGTERM', shutDown)
+   * process.on('SIGINT', shutDown)
+   * ```
+   */
   const stop = () => {
     abortController.abort()
     clearInterval(timer)

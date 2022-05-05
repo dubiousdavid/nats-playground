@@ -1,6 +1,8 @@
 /*
  * Demonstrates a successful job and how to gracefully shut down
  * without interrupting a short-lived job.
+ *
+ * Requires NATS to be running.
  */
 import { JsMsg } from 'nats'
 import { setTimeout } from 'node:timers/promises'

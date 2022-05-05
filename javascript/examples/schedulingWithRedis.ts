@@ -7,6 +7,8 @@
  * Run multiple instances of the script:
  * npx ts-node examples/schedulingWithRedis.ts
  * You should only see one pid for a given date.
+ *
+ * Requires NATS and Redis to be running.
  */
 import { StringCodec } from 'nats'
 import jobScheduler from '../src/jobScheduler'
@@ -14,7 +16,7 @@ const sc = StringCodec()
 
 const run = async () => {
   const scheduler = await jobScheduler()
-  scheduler.schedule({
+  scheduler.scheduleRecurring({
     id: 'ordersEvery5s',
     rule: '*/5 * * * * *',
     subject: 'ORDERS.US',
