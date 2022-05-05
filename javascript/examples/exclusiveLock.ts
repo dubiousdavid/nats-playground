@@ -1,6 +1,16 @@
 /*
  * Demonstrates how to process only one resource at a time
  * when multiple clients are pulling from the same consumer.
+ *
+ * To Test:
+ *
+ * (1) Run two or more instances of the script:
+ * npx ts-node examples/exclusiveLock.ts
+ * (2) Publish multiple messages with the same value:
+ * nats pub ORDERS 10
+ * nats pub ORDERS 11
+ * nats pub ORDERS 11
+ * nats pub ORDERS 10
  */
 import { JsMsg, StringCodec } from 'nats'
 import Redis from 'ioredis'
@@ -40,6 +50,7 @@ const def = {
     })
   },
 }
+
 const run = async () => {
   const processor = await jobProcessor()
   processor.start(def)

@@ -1,6 +1,9 @@
 /*
- * Demonstrates basic scheduling where multiple, redundant
- * schedulers are not needed.
+ * Demonstrates how the dupe window option for streams cannot
+ * be counted on if multiple schedulers are attempting to publish
+ * the same message at the exact same time in two separate processes.
+ *
+ * You should see the same date with different pids if run long enough.
  */
 import { connect, StringCodec } from 'nats'
 import schedule from 'node-schedule'

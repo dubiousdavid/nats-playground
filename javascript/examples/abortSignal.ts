@@ -1,5 +1,11 @@
 /*
- * Demonstrates how to stop an iterative job using the abort signal
+ * Demonstrates how to stop an iterative job using the abort signal.
+ *
+ * To Test:
+ *
+ * (1) Run script: npx ts-node examples/abortSignal.ts
+ * (2) Publish a message: nats pub ORDERS someText
+ * (3) Crl-C the script in the middle of the 1-5 log messages.
  */
 import { JsMsg } from 'nats'
 import { setTimeout } from 'node:timers/promises'
