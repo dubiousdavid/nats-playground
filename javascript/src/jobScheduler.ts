@@ -80,7 +80,7 @@ const jobScheduler = async (opts?: RedisOpts & NatsOpts) => {
     }, interval)
   }
 
-  return { schedule, scheduleOneTime }
+  return { schedule, scheduleOneTime, processOneTime }
 }
 
 export default jobScheduler
