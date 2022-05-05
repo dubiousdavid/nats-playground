@@ -74,7 +74,7 @@ const jobProcessor = async (opts?: NatsOpts) => {
   let abortController = new AbortController()
 
   const start = async (def: JobDef) => {
-    debug('JOB DEF', def)
+    debug('JOB DEF %O', def)
     const pullInterval = def.pullInterval ?? defaults.pullInterval
     const backoff = def.backoff ?? defaults.backoff
     const batch = def.batch ?? defaults.batch
