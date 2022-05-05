@@ -1,4 +1,4 @@
-import _ from 'lodash/fp'
+import ms from 'ms'
 import {
   AckPolicy,
   connect,
@@ -14,7 +14,6 @@ import {
 import { nanos, defer } from './util'
 import _debug from 'debug'
 import { Deferred, NatsOpts, JobDef } from './types'
-import { clearInterval } from 'timers'
 
 const debug = _debug('nats')
 
@@ -27,36 +26,38 @@ const getNextBackoff = (backoff: number | number[], msg: JsMsg) => {
 
 const createStream = async (conn: NatsConnection, def: JobDef) => {
   const jsm = await conn.jetstreamManager()
-  const defaultStreamConfig = {
+  // Stream config
+  const config = {
     name: def.stream,
     retention: RetentionPolicy.Workqueue,
     storage: StorageType.File,
     max_age: nanos('1w'),
-    // TODO: This should come from the def
     num_replicas: 1,
     subjects: [def.stream],
     discard: DiscardPolicy.Old,
     deny_delete: false,
     deny_purge: false,
+    ...def.streamConfig
   }
-  const config = _.merge(defaultStreamConfig, def.streamConfig)
   debug('STREAM CONFIG %O', config)
+  // Add stream
   return jsm.streams.add(config)
 }
 
 const createConsumer = (conn: NatsConnection, def: JobDef) => {
-  const defaultConsumerConfig = {
+  // Consumer config
+  const config = {
     durable_name: `${def.stream}Consumer`,
     max_deliver: def.numAttempts ?? 5,
     ack_policy: AckPolicy.Explicit,
     ack_wait: nanos('10s'),
     deliver_policy: DeliverPolicy.All,
     replay_policy: ReplayPolicy.Instant,
+    ...def.consumerConfig
   }
-  const js = conn.jetstream()
-  const config = _.merge(defaultConsumerConfig, def.consumerConfig)
   debug('CONSUMER CONFIG %O', config)
-
+  const js = conn.jetstream()
+  // Create a pull consumer
   return js.pullSubscribe(def.filterSubject || '', {
     stream: def.stream,
     mack: true,
@@ -79,9 +80,9 @@ const jobProcessor = async (opts?: NatsOpts) => {
    */
   const start = async (def: JobDef) => {
     debug('JOB DEF %O', def)
-    const pullInterval = def.pullInterval ?? defaults.pullInterval
-    const backoff = def.backoff ?? defaults.backoff
-    const batch = def.batch ?? defaults.batch
+    const pullInterval = def.pullInterval ?? ms('1s')
+    const backoff = def.backoff ?? ms('1s')
+    const batch = def.batch ?? 10
     // Create stream
     // TODO: Maybe handle errors better
     await createStream(conn, def).catch(() => {})
